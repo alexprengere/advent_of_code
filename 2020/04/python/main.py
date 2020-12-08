@@ -12,11 +12,11 @@ def split_passeports(rows):
     passeport = []
     for row in rows:
         fields = row.strip().split()
-        if fields:
-            passeport += fields
-        else:  # new passeport
+        if not fields:  # new passeport
             yield passeport
             passeport = []
+        else:
+            passeport += fields
     yield passeport
 
 
@@ -78,4 +78,4 @@ def is_valid(passeport):
     return True
 
 
-print(sum(is_valid(passeport) for passeport in split_passeports(sys.stdin)))
+print(sum(is_valid(p) for p in split_passeports(sys.stdin)))
