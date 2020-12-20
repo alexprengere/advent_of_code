@@ -22,7 +22,7 @@ for position, value in islice(enumerate(numbers), PREAMBLE, None):
 #
 for start_position, start_value in enumerate(numbers):
     total = start_value
-    for position, value in enumerate(numbers[start_position + 1:]):
+    for position, value in enumerate(numbers[start_position + 1 :]):
         total += value
         if total == N:
             values = numbers[start_position : start_position + position + 1]
