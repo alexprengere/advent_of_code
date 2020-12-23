@@ -39,7 +39,7 @@ class Ferry:
         self.direction = DIRECTIONS[new_index % len(DIRECTIONS)]
 
 
-ferry = Ferry(0j, "E")
+ferry = Ferry(0, "E")
 
 for action, value in data:
     if action == "L":
@@ -51,7 +51,7 @@ for action, value in data:
     else:  # action is a direction in [N, W, S, E]
         ferry.move(value, direction=action)
 
-print(abs(ferry.point.real) + abs(ferry.point.imag))
+print(int(abs(ferry.point.real) + abs(ferry.point.imag)))
 
 
 # PART 2
@@ -71,7 +71,7 @@ class Ferry:
         self.point += value * self.waypoint
 
 
-ferry = Ferry(0j, 10 + 1j)
+ferry = Ferry(0, 10 + 1j)
 
 for action, value in data:
     if action == "L":
@@ -83,4 +83,4 @@ for action, value in data:
     else:  # action is a direction in [N, W, S, E]
         ferry.move_waypoint(value, direction=action)
 
-print(abs(ferry.point.real) + abs(ferry.point.imag))
+print(int(abs(ferry.point.real) + abs(ferry.point.imag)))
