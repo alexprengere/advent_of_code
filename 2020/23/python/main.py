@@ -2,35 +2,41 @@ import sys
 
 
 def move(cups, turns):
-    min_cups, max_cups = min(cups), max(cups)
+    min_cup, max_cup = min(cups), max(cups)
 
-    # clockwise holds positions of the next cup
-    clockwise = [0] * (len(cups) + 1)  # could be a dict as well
+    # clockwise holds positions of the clockwise neighbor cup
+    # First min_cup positions will never be used.
+    clockwise = [0] * (len(cups) + min_cup)
     for i, _ in enumerate(cups[:-1]):
         clockwise[cups[i]] = cups[i + 1]
     clockwise[cups[-1]] = cups[0]
 
     current_cup = cups[0]
     for _ in range(turns):
-        selected = []
-        selected_next = clockwise[current_cup]
-        for _ in range(3):  # could be faster by rolling out the loop
-            selected.append(selected_next)
-            selected_next = clockwise[selected_next]
-        clockwise[current_cup] = selected_next
+        # Ugly, but faster than an explicit for loop ;)
+        picked = [
+            clockwise[current_cup],
+            clockwise[clockwise[current_cup]],
+            clockwise[clockwise[clockwise[current_cup]]],
+        ]
 
+        # Finding the destination cup
         destination = current_cup - 1
-        if destination < min_cups:
-            destination = max_cups
-        while destination in selected:
+        if destination < min_cup:
+            destination = max_cup
+        while destination in picked:
             destination -= 1
-            if destination < min_cups:
-                destination = max_cups
+            if destination < min_cup:
+                destination = max_cup
 
-        # Insert the selected cups after the destination
-        clockwise[selected[-1]] = clockwise[destination]
-        clockwise[destination] = selected[0]
+        # New neighbor of current cup is the neighbor of the last picked
+        clockwise[current_cup] = clockwise[picked[-1]]
 
+        # Insert the picked cups after the destination
+        clockwise[picked[-1]] = clockwise[destination]
+        clockwise[destination] = picked[0]
+
+        # New current cup is the clockwise neighbor
         current_cup = clockwise[current_cup]
 
     return clockwise
