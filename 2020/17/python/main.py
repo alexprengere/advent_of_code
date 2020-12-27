@@ -2,9 +2,6 @@ import sys
 from itertools import product
 
 
-# PART 1: without the 4th dimension
-# PART 2
-#
 def neighbors(coordinates):
     # Not using the sum over a zip is actually 4x faster.
     x, y, z, w = coordinates
@@ -23,6 +20,32 @@ def get_adjacent_inactive_cubes(active):
     return inactive
 
 
+def run_cycles(active, cycles):
+    for _ in range(cycles):
+        changes = {}
+        # Rule #1
+        for coord in active:
+            active_neighbors = sum(n in active for n in neighbors(coord))
+            if active_neighbors not in (2, 3):
+                changes[coord] = False
+        # Rule #2
+        for coord in get_adjacent_inactive_cubes(active):
+            active_neighbors = sum(n in active for n in neighbors(coord))
+            if active_neighbors == 3:
+                changes[coord] = True
+
+        for coord, status in changes.items():
+            if status is True:
+                active.add(coord)
+            else:
+                active.remove(coord)
+
+    return active
+
+
+# PART 1: without the 4th dimension
+# PART 2
+#
 # We only track active cubes coordinates, that's it.
 active = set()
 for y, row in enumerate(sys.stdin):
@@ -30,25 +53,4 @@ for y, row in enumerate(sys.stdin):
         if status == "#":
             active.add((x, y, 0, 0))
 
-
-TURNS = 6
-for turn in range(TURNS):
-    changes = {}
-    # Rule #1
-    for coord in active:
-        active_neighbors = sum(n in active for n in neighbors(coord))
-        if active_neighbors not in (2, 3):
-            changes[coord] = False
-    # Rule #2
-    for coord in get_adjacent_inactive_cubes(active):
-        active_neighbors = sum(n in active for n in neighbors(coord))
-        if active_neighbors == 3:
-            changes[coord] = True
-
-    for coord, status in changes.items():
-        if status is True:
-            active.add(coord)
-        else:
-            active.remove(coord)
-
-    print(1 + turn, len(active))
+print(len(run_cycles(active, 6)))
