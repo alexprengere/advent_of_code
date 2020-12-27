@@ -8,27 +8,19 @@ for n in next(sys.stdin).split(","):
 # PART 1: 2020
 # PART 2: 30_000_000
 #
-TURNS = 30000000
-last_spoken = None
-last_turns = {}
+TURNS = 30_000_000
 
-for turn in range(1, TURNS + 1):
-    if turn <= len(numbers):
-        spoken = numbers[turn - 1]
+last_turns = {n: turn for turn, n in enumerate(numbers[:-1], start=1)}
+last_spoken = numbers[-1]
+
+for turn in range(len(numbers) + 1, TURNS + 1):
+    # "turn - 1" is the last turn where last_spoken was spoken
+    # last_turns[last_spoken] is the turn before that (not updated yet to "turn - 1").
+    if last_spoken in last_turns:
+        spoken = turn - 1 - last_turns[last_spoken]
     else:
-        _, prev_turn = last_turns[last_spoken]
-        if prev_turn is None:
-            spoken = 0
-        else:
-            spoken = (turn - 1) - prev_turn
-
-    # Recording 2 previous turns of spoken number
-    if spoken in last_turns:
-        last_turn, _ = last_turns[spoken]
-    else:
-        last_turn = None
-
-    last_turns[spoken] = turn, last_turn
+        spoken = 0
+    last_turns[last_spoken] = turn - 1
     last_spoken = spoken
 
 print(last_spoken)
