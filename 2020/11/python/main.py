@@ -39,6 +39,29 @@ def get_visible_seats(seats, rn, sn):
                 break
 
 
+def stabilize(seats, get_neighbors, limit):
+    # Deep copying to not modify the input
+    seats = [list(row) for row in seats]
+
+    while True:
+        changes = {}
+        for rn, row in enumerate(seats):
+            for sn, seat in enumerate(row):
+                neighbors = list(get_neighbors(seats, rn, sn))
+                if seat == "L":
+                    if all(n != "#" for n in neighbors):
+                        changes[rn, sn] = "#"
+                elif seat == "#":
+                    if sum(n == "#" for n in neighbors) >= limit:
+                        changes[rn, sn] = "L"
+        if not changes:
+            break
+        for (rn, sn), status in changes.items():
+            seats[rn][sn] = status
+
+    return sum(row.count("#") for row in seats)
+
+
 # PART 1: get_adjacent_seats & 4 occupied
 # PART 2: get_visible_seats & 5 occupied
 #
@@ -46,23 +69,5 @@ seats = []
 for line in sys.stdin:
     seats.append(list(line.rstrip()))
 
-
-while True:
-    changes = {}
-
-    for rn, row in enumerate(seats):
-        for sn, seat in enumerate(row):
-            visible = list(get_visible_seats(seats, rn, sn))
-            if seat == "L":
-                if all(v != "#" for v in visible):
-                    changes[rn, sn] = "#"
-            elif seat == "#":
-                if sum(v == "#" for v in visible) >= 5:
-                    changes[rn, sn] = "L"
-
-    if not changes:
-        break
-    for (rn, sn), status in changes.items():
-        seats[rn][sn] = status
-
-print(sum(row.count("#") for row in seats))
+print(stabilize(seats, get_adjacent_seats, limit=4))
+print(stabilize(seats, get_visible_seats, limit=5))
