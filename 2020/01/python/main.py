@@ -10,3 +10,4 @@ for row in sys.stdin:
 for numbers in itertools.combinations_with_replacement(data, 3):
     if sum(numbers) == 2020:
         print(reduce(operator.mul, numbers, 1))
+        break
