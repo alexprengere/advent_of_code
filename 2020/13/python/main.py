@@ -9,23 +9,26 @@ buses = [
 ]
 
 
+def chinese_remainder_theorem(data):
+    total, step = 0, 1
+    for remainder, integer in data:
+        for c in itertools.count(total, step):
+            if (c + remainder) % integer == 0:
+                total, step = c, step * integer
+                break
+    return total
+
+
 # PART 1
 #
-wait_duration = []
+waiting_time = []
 for _, bus in buses:
-    wait_duration.append((-timestamp % bus, bus))
+    waiting_time.append((-timestamp % bus, bus))
 
-print(min(wait_duration))
+time, bus = min(waiting_time)
+print(time * bus)
 
 
 # PART 2
 #
-# Chinese remainder theorem
-total, step = 0, 1
-for bn, bus in buses:
-    for c in itertools.count(total, step):
-        if (c + bn) % bus == 0:
-            total, step = c, step * bus
-            break
-
-print(total)
+print(chinese_remainder_theorem(buses))
