@@ -13,9 +13,20 @@ def split_groups(rows):
     yield group
 
 
+groups = list(split_groups(sys.stdin))
+
+
 # PART 1: set.union
-# PART 2: set.intersection
+#
 count = 0
-for group in split_groups(sys.stdin):
+for group in groups:
+    count += len(set.union(*(set(q) for q in group)))
+print(count)
+
+
+# PART 2: set.intersection
+#
+count = 0
+for group in groups:
     count += len(set.intersection(*(set(q) for q in group)))
 print(count)
