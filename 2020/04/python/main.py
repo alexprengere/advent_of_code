@@ -20,7 +20,7 @@ def split_passeports(rows):
     yield passeport
 
 
-def is_valid(passeport):
+def is_valid(passeport, advanced_ckecks=False):
     data = {}
     for entry in passeport:
         key, value = entry.split(":")
@@ -28,6 +28,9 @@ def is_valid(passeport):
 
     if not REQUIRED.issubset(data):  # missing fields
         return False
+
+    if not advanced_ckecks:
+        return True
 
     if len(data["byr"]) != 4:
         return False
@@ -78,4 +81,6 @@ def is_valid(passeport):
     return True
 
 
-print(sum(is_valid(p) for p in split_passeports(sys.stdin)))
+passeports = list(split_passeports(sys.stdin))
+print(sum(is_valid(p, advanced_ckecks=False) for p in passeports))
+print(sum(is_valid(p, advanced_ckecks=True) for p in passeports))
