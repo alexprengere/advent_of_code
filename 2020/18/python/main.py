@@ -55,7 +55,6 @@ def parse(row):
 # PART 1: evaluate with part=1
 # PART 2: evaluate with part=2
 #
-total = 0
-for row in sys.stdin:
-    total += evaluate(parse(row), part=2)
-print(total)
+rows = list(sys.stdin)
+for part in (1, 2):
+    print(sum(evaluate(parse(row), part=part) for row in rows))
