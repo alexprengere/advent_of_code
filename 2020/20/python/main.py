@@ -146,10 +146,12 @@ for i in range(size):
             placed.add(m)
             break
 
+"""
 for i in range(size):
     for j in range(size):
         print(puzzle.get(i + j * 1j, "...."), end=" ")
     print()
+"""
 
 
 # Re-orienting tiles correctly
@@ -209,5 +211,5 @@ for image in chain(rotations(image), rotations(flip(image))):
     if oriented:  # once a monster have been found, we stop the image rotations/flips
         break
 
-print("\n".join(image))
+# print("\n".join(image))
 print(sum(row.count("#") for row in image))
