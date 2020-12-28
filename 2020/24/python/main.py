@@ -41,6 +41,29 @@ def get_adjacent_white_tiles(black):
     return white
 
 
+def after_some_days(black, days):
+    for _ in range(days):
+        changes = {}
+        # Rule #1
+        for tile in black:
+            black_neighbors = sum(n in black for n in neighbors(tile))
+            if black_neighbors == 0 or black_neighbors > 2:
+                changes[tile] = False
+        # Rule #2
+        for tile in get_adjacent_white_tiles(black):
+            black_neighbors = sum(n in black for n in neighbors(tile))
+            if black_neighbors == 2:
+                changes[tile] = True
+
+        for tile, status in changes.items():
+            if status is True:
+                black.add(tile)
+            else:
+                black.remove(tile)
+
+    return black
+
+
 # READING INPUT
 #
 PATHS = []
@@ -58,31 +81,10 @@ for row in sys.stdin:
 # PART 1
 #
 flipped = Counter(compute_coordinates(path) for path in PATHS)
-black = [coords for coords, f in flipped.items() if f % 2 == 1]
-print(len(black))
+print(sum(f % 2 == 1 for f in flipped.values()))
 
 
 # PART 2
 #
-black = set(black)  # were unique anyway
-
-for _ in range(100):
-    changes = {}
-    # Rule #1
-    for tile in black:
-        black_neighbors = sum(n in black for n in neighbors(tile))
-        if black_neighbors == 0 or black_neighbors > 2:
-            changes[tile] = False
-    # Rule #2
-    for tile in get_adjacent_white_tiles(black):
-        black_neighbors = sum(n in black for n in neighbors(tile))
-        if black_neighbors == 2:
-            changes[tile] = True
-
-    for tile, status in changes.items():
-        if status is True:
-            black.add(tile)
-        else:
-            black.remove(tile)
-
-print(len(black))
+black = set(coords for coords, f in flipped.items() if f % 2 == 1)
+print(len(after_some_days(black, 100)))
