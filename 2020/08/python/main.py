@@ -22,6 +22,22 @@ def run(program):
     return corrupted, accumulator
 
 
+def fix_program(program):
+    for pos, (cmd, value) in enumerate(program):
+        if cmd == "nop":
+            fixed_program = program.copy()
+            fixed_program[pos] = ("jmp", value)
+        elif cmd == "jmp":
+            fixed_program = program.copy()
+            fixed_program[pos] = ("nop", value)
+        else:
+            continue
+
+        corrupted, accumulator = run(fixed_program)
+        if not corrupted:
+            return accumulator
+
+
 program = []
 for row in sys.stdin:
     cmd, value = row.rstrip().split()
@@ -30,21 +46,11 @@ for row in sys.stdin:
 
 # PART 1
 #
-print(run(program))
+corrupted, accumulator = run(program)
+assert corrupted
+print(accumulator)
 
 
 # PART 2
 #
-for pos, (cmd, value) in enumerate(program):
-    if cmd == "nop":
-        fixed_program = program.copy()
-        fixed_program[pos] = ("jmp", value)
-    elif cmd == "jmp":
-        fixed_program = program.copy()
-        fixed_program[pos] = ("nop", value)
-    else:
-        continue
-
-    corrupted, accumulator = run(fixed_program)
-    if not corrupted:
-        print(pos, cmd, accumulator)
+print(fix_program(program))
