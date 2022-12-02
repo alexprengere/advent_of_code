@@ -1,11 +1,11 @@
-use std::io::{self, BufRead};
+use std::io;
 
 fn process_line(line: Vec<&str>) -> bool {
     let (range, letter, password) = (line[0], line[1], line[2]);
-    let range: Vec<&str> = range.split("-").collect();
+    let range: Vec<&str> = range.split('-').collect();
     let first = range[0].parse::<usize>().unwrap();
     let last = range[1].parse::<usize>().unwrap();
-    let letter = letter.chars().nth(0).unwrap();
+    let letter = letter.chars().next().unwrap();
 
     let mut validated = 0;
     for &pos in &[first, last] {
@@ -17,14 +17,12 @@ fn process_line(line: Vec<&str>) -> bool {
 }
 
 fn main() {
-    let stdin = io::stdin();
-
     let mut total_valid = 0;
-    for line in stdin.lock().lines() {
+    for line in io::stdin().lines() {
         let is_valid = process_line(line.unwrap().split(' ').collect());
         if is_valid {
             total_valid += 1;
         }
     }
-    println!("{}", total_valid);
+    println!("{total_valid}");
 }
