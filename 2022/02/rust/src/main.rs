@@ -1,6 +1,6 @@
 use std::io;
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 enum Shape {
     Rock,
     Paper,
@@ -15,23 +15,51 @@ impl Shape {
             Shape::Scissors => 3,
         }
     }
-}
 
-fn outcome(a: Shape, b: Shape) -> i32 {
-    match (a, b) {
-        (Shape::Rock, Shape::Paper) => 0,
-        (Shape::Paper, Shape::Scissors) => 0,
-        (Shape::Scissors, Shape::Rock) => 0,
-        (x, y) if x == y => 3,
-        (_, _) => 6,
+    fn wins(&self) -> Shape {
+        match *self {
+            Shape::Rock => Shape::Scissors,
+            Shape::Paper => Shape::Rock,
+            Shape::Scissors => Shape::Paper,
+        }
+    }
+
+    fn loses(&self) -> Shape {
+        match *self {
+            Shape::Rock => Shape::Paper,
+            Shape::Paper => Shape::Scissors,
+            Shape::Scissors => Shape::Rock,
+        }
+    }
+
+    fn draws(&self) -> Shape {
+        *self
     }
 }
+
+enum Outcome {
+    Lose,
+    Draw,
+    Win,
+}
+
+impl Outcome {
+    fn score(&self) -> i32 {
+        match *self {
+            Outcome::Lose => 0,
+            Outcome::Draw => 3,
+            Outcome::Win => 6,
+        }
+    }
+}
+
+
 
 fn main() {
     let mut score = 0;
     for line in io::stdin().lines() {
-        let op_move = line.as_ref().unwrap().chars().nth(0).unwrap();
-        let my_move = line.as_ref().unwrap().chars().nth(2).unwrap();
+        let op_move = line.as_ref().unwrap().chars().next().unwrap();
+        let outcome_code = line.as_ref().unwrap().chars().nth(2).unwrap();
 
         let op_shape = match op_move {
             'A' => Shape::Rock,
@@ -39,13 +67,18 @@ fn main() {
             'C' => Shape::Scissors,
             _ => panic!("Unknown move"),
         };
-        let my_shape = match my_move {
-            'X' => Shape::Rock,
-            'Y' => Shape::Paper,
-            'Z' => Shape::Scissors,
-            _ => panic!("Unknown move"),
+        let outcome = match outcome_code {
+            'X' => Outcome::Lose,
+            'Y' => Outcome::Draw,
+            'Z' => Outcome::Win,
+            _ => panic!("Unknown outcome"),
         };
-        score += my_shape.score() + outcome(my_shape, op_shape);
+        let my_shape = match outcome {
+            Outcome::Lose => op_shape.wins(),
+            Outcome::Draw => op_shape.draws(),
+            Outcome::Win => op_shape.loses(),
+        };
+        score += my_shape.score() + outcome.score();
     }
     println!("{score}");
 }
