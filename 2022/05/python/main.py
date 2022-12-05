@@ -3,6 +3,8 @@ import re
 from itertools import islice
 from collections import defaultdict, deque
 
+PART = 2
+
 
 def batched(iterable, n):
     "Batch data into lists of length n. The last batch may be shorter."
@@ -24,10 +26,13 @@ for row in sys.stdin:
             stacks[n].appendleft(gt[1])
 
 REG = re.compile(r"move (\d+) from (\d+) to (\d+)")
+
 for row in sys.stdin:
     amount, source, target = REG.match(row).groups()
-    for _ in range(int(amount)):
-        crate = stacks[int(source)].pop()
-        stacks[int(target)].append(crate)
+    crates = [stacks[int(source)].pop() for _ in range(int(amount))]
+    if PART == 1:
+        stacks[int(target)] += crates
+    elif PART == 2:
+        stacks[int(target)] += reversed(crates)
 
 print("".join(stacks[n][-1] for n in sorted(stacks)))
