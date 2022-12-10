@@ -22,19 +22,14 @@ class Point:
         return abs(self.x - p.x) + abs(self.y - p.y)
 
 
-moves = []
-for row in sys.stdin:
-    move, n = row.rstrip().split()
-    moves.append((move, int(n)))
-
 N = 10  # for part 1, use N = 2
 rope = [Point(0, 0) for _ in range(N)]
 head, tail = rope[0], rope[-1]
-
 history = {(tail.x, tail.y)}
 
-for move, n in moves:
-    for _ in range(n):
+for row in sys.stdin:
+    move, n = row.rstrip().split()
+    for _ in range(int(n)):
         if move == "R":
             head.x += 1
         elif move == "L":
