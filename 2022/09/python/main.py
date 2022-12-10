@@ -1,12 +1,12 @@
 import sys
-import dataclasses
 import itertools
+from dataclasses import dataclass
 
 
 D_INDICES = set(itertools.product((-1, 0, 1), repeat=2))
 
 
-@dataclasses.dataclass(eq=True)
+@dataclass
 class Point:
     x: int
     y: int
@@ -29,26 +29,26 @@ for row in sys.stdin:
 
 N = 10  # for part 1, use N = 2
 rope = [Point(0, 0) for _ in range(N)]
+head, tail = rope[0], rope[-1]
 
-# In history we store copies using dataclasses.replace
-history = [[dataclasses.replace(n) for n in rope]]
+history = {(tail.x, tail.y)}
 
 for move, n in moves:
     for _ in range(n):
         if move == "R":
-            rope[0].x += 1
+            head.x += 1
         elif move == "L":
-            rope[0].x -= 1
+            head.x -= 1
         elif move == "U":
-            rope[0].y += 1
+            head.y += 1
         elif move == "D":
-            rope[0].y -= 1
+            head.y -= 1
 
         for n1, n2 in itertools.pairwise(rope):
             if n1.distance(n2) > 1:
                 n2_new = min(n2.neighbors(), key=n1.manhattan)
                 n2.x, n2.y = n2_new.x, n2_new.y
 
-        history.append([dataclasses.replace(n) for n in rope])
+        history.add((tail.x, tail.y))
 
-print(len(set((t.x, t.y) for *_, t in history)))
+print(len(history))
