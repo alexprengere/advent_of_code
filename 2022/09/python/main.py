@@ -27,46 +27,28 @@ for row in sys.stdin:
     move, n = row.rstrip().split()
     moves.append((move, int(n)))
 
-# In positions we store copies using dataclasses.replace
-h, t = Point(0, 0), Point(0, 0)
-positions = [[dataclasses.replace(h), dataclasses.replace(t)]]
+N = 10  # for part 1, use N = 2
+rope = [Point(0, 0) for _ in range(N)]
+
+# In history we store copies using dataclasses.replace
+history = [[dataclasses.replace(n) for n in rope]]
 
 for move, n in moves:
     for _ in range(n):
         if move == "R":
-            h.x += 1
+            rope[0].x += 1
         elif move == "L":
-            h.x -= 1
+            rope[0].x -= 1
         elif move == "U":
-            h.y += 1
+            rope[0].y += 1
         elif move == "D":
-            h.y -= 1
+            rope[0].y -= 1
 
-        if h.distance(t) > 1:
-            t = min(t.neighbors(), key=h.manhattan)
+        for n1, n2 in itertools.pairwise(rope):
+            if n1.distance(n2) > 1:
+                n2_new = min(n2.neighbors(), key=n1.manhattan)
+                n2.x, n2.y = n2_new.x, n2_new.y
 
-        positions.append([dataclasses.replace(h), dataclasses.replace(t)])
+        history.append([dataclasses.replace(n) for n in rope])
 
-
-# from pprint import pprint
-# pprint(positions)
-
-print(len(set((t.x, t.y) for _, t in positions)))
-
-"""
-min_x = min(h.x for h, _ in positions)
-max_x = max(h.x for h, _ in positions)
-min_y = min(h.y for h, _ in positions)
-max_y = max(h.y for h, _ in positions)
-
-for hy in range(max_y, min_y - 1, -1):
-    for hx in range(min_x, max_x + 1):
-        try:
-            turn = 1
-        except ValueError:
-            print(".", end="")
-        else:
-            print(f"{turn % 10}", end="")
-    print()
-"""
-
+print(len(set((t.x, t.y) for *_, t in history)))
