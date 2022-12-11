@@ -1,25 +1,27 @@
 import sys
-import operator
+import math
+import heapq
 
 
-def generate_operation(v1, op, v2):
-    def _func(i):
-        arg_0 = i if v1 == "old" else int(v1)
-        arg_1 = i if v2 == "old" else int(v2)
+def gen_func(v1, op, v2):
+    # This function could be cleaner, but it has been tweaked for speed :)
+    if (v1, op, v2) == ("old", "*", "old"):
+        return lambda i: i * i  # faster than i ** 2
+    if (v1, op, v2) == ("old", "+", "old"):
+        return lambda i: i + i  # faster than i * 2
 
-        if op == "+":
-            return arg_0 + arg_1
-        elif op == "*":
-            return arg_0 * arg_1
-        else:
-            raise Exception()
+    # In the remaining case if should always be ("old", op, <int>)
+    v2 = int(v2)
+    if op == "*":
+        return lambda i: i * v2
+    if op == "+":
+        return lambda i: i + v2
 
-    return _func
+    raise Exception(f"Should not happen for {v1} {op} {v2}")
 
 
-PART = 1
 monkeys = {}
-monkey = None
+divisors = []
 
 for row in sys.stdin:
     row = row.strip()
@@ -34,43 +36,36 @@ for row in sys.stdin:
     elif row.startswith("Operation"):
         operation = row.removeprefix("Operation: ")
         _, _, right = operation.partition(" = ")
-        monkey["operation"] = right.split()
+        monkey["operation"] = gen_func(*right.split())
 
     elif row.startswith("Test"):
         _, _, n = row.removeprefix("Test: ").split()
         monkey["test"] = [int(n)]
+        divisors.append(int(n))
 
     elif row.startswith("If"):
         *_, n = row.split()
         monkey["test"].append(int(n))
 
 
-for monkey in monkeys.values():
-    monkey["operation"] = generate_operation(*monkey["operation"])
+LCM = math.lcm(*divisors)
+PART = 2
+ROUNDS = 20 if PART == 1 else 10_000
 
-ROUNDS = 20 if PART == 1 else 1_000
-
-for round_ in range(1, 1 + ROUNDS):
-    for number in sorted(monkeys):
+for _ in range(ROUNDS):
+    for number in monkeys:  # should be sorted per input order
         monkey = monkeys[number]
         for item in monkey["items"]:
             monkey["inspected"] += 1
             item = monkey["operation"](item)
             if PART == 1:
                 item //= 3
-            test, a, b = monkey["test"]
-            if item % test == 0:
-                target = a
-            else:
-                target = b
+            else:  # optimisation, not necessary
+                item %= LCM
+            divisor, a, b = monkey["test"]
+            target = a if item % divisor == 0 else b
             monkeys[target]["items"].append(item)
         monkey["items"].clear()
 
-    if round_ % 100 == 0:
-        print(f"After round {round_}")
-        for number in sorted(monkeys):
-            inspected = monkeys[number]["inspected"]
-            print(f"Monkey {number}: {inspected}")
-
-most_active = sorted(m["inspected"] for m in monkeys.values())[-2:]
-print(operator.mul(*most_active))
+most_active = heapq.nlargest(2, (m["inspected"] for m in monkeys.values()))
+print(math.prod(most_active))
