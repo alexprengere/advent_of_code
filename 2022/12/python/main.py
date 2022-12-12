@@ -3,21 +3,19 @@ from dataclasses import dataclass
 
 
 def dijkstra_algorithm(graph, source):
+    previous_nodes = {}  # to re-build the shortest known path
     shortest_dist = {node: sys.maxsize for node in graph}
     shortest_dist[source] = 0
-
-    previous_nodes = {}  # to re-build the shortest known path
 
     unvisited_nodes = list(graph)
     while unvisited_nodes:
         min_node = min(unvisited_nodes, key=lambda n: shortest_dist[n])
 
         for neighbor, dist in graph[min_node].neighbors:
-            dist_from_min_node = shortest_dist[min_node] + dist
-            if dist_from_min_node < shortest_dist[neighbor]:
-                shortest_dist[neighbor] = dist_from_min_node
+            dist_through_min_node = shortest_dist[min_node] + dist
+            if dist_through_min_node < shortest_dist[neighbor]:
+                shortest_dist[neighbor] = dist_through_min_node
                 previous_nodes[neighbor] = min_node
-
         unvisited_nodes.remove(min_node)
 
     return previous_nodes, shortest_dist
