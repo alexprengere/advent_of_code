@@ -3,20 +3,15 @@ from dataclasses import dataclass
 
 
 def dijkstra_algorithm(graph, source):
-    # Cost of visiting each node and update it as we move along the graph
     shortest_dist = {node: sys.maxsize for node in graph}
     shortest_dist[source] = 0
 
-    # This dict saves the shortest known path to a node found so far
-    previous_nodes = {}
+    previous_nodes = {}  # to re-build the shortest known path
 
-    # The algorithm executes until we visit all nodes
     unvisited_nodes = list(graph)
     while unvisited_nodes:
         min_node = min(unvisited_nodes, key=lambda n: shortest_dist[n])
 
-        # The code block below retrieves the current node's neighbors
-        # and updates their distances & best path
         for neighbor, dist in graph[min_node].neighbors:
             dist_from_min_node = shortest_dist[min_node] + dist
             if dist_from_min_node < shortest_dist[neighbor]:
@@ -28,18 +23,13 @@ def dijkstra_algorithm(graph, source):
     return previous_nodes, shortest_dist
 
 
-Node = tuple[int, int]
-Distance = int
-
-
 @dataclass
 class NodeData:
     height: int
-    neighbors: list[tuple[Node, Distance]]
+    neighbors: list
 
 
 graph = {}
-
 for y, row in enumerate(sys.stdin):
     for x, elevation in enumerate(row.rstrip()):
         node = x, y
@@ -57,9 +47,18 @@ for node in graph:
         adj_node = x + dx, y + dy
         if adj_node not in graph:
             continue
-        if graph[adj_node].height <= graph[node].height + 1:
+        # The condition is swapped on purpose here, as we will
+        # go from target to source (useful for part 2)
+        if graph[node].height <= graph[adj_node].height + 1:
             graph[node].neighbors.append((adj_node, 1))
 
 
-_, shortest_dist = dijkstra_algorithm(graph, source)
-print(shortest_dist[target])
+# PART 1
+#
+_, shortest_dist = dijkstra_algorithm(graph, target)
+print(shortest_dist[source])
+
+
+# PART 2
+#
+print(min(shortest_dist[node] for node in graph if graph[node].height == 0))
