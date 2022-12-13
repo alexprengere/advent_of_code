@@ -1,22 +1,28 @@
 import sys
 from dataclasses import dataclass
+from heapq import heappush, heappop
 
 
-def dijkstra_algorithm(graph, source):
+def dijkstra(graph, source):
     previous_nodes = {}  # to re-build the shortest known path
     shortest_dist = {node: sys.maxsize for node in graph}
     shortest_dist[source] = 0
 
-    unvisited_nodes = list(graph)
-    while unvisited_nodes:
-        min_node = min(unvisited_nodes, key=lambda n: shortest_dist[n])
-
+    # This can be converted to a A* algorithm by inserting a heuristic
+    # function when pushing / popping the heap.
+    seen = set()
+    heap = [(0, source)]
+    while heap:
+        dist_min_node, min_node = heappop(heap)
+        seen.add(min_node)
         for neighbor, dist in graph[min_node].neighbors:
-            dist_through_min_node = shortest_dist[min_node] + dist
-            if dist_through_min_node < shortest_dist[neighbor]:
-                shortest_dist[neighbor] = dist_through_min_node
+            if neighbor in seen:
+                continue
+            dist_neighbor = dist_min_node + dist
+            if dist_neighbor < shortest_dist[neighbor]:
+                shortest_dist[neighbor] = dist_neighbor
                 previous_nodes[neighbor] = min_node
-        unvisited_nodes.remove(min_node)
+                heappush(heap, (dist_neighbor, neighbor))
 
     return previous_nodes, shortest_dist
 
@@ -53,10 +59,11 @@ for node in graph:
 
 # PART 1
 #
-_, shortest_dist = dijkstra_algorithm(graph, target)
+_, shortest_dist = dijkstra(graph, target)
 print(shortest_dist[source])
 
 
 # PART 2
 #
-print(min(shortest_dist[node] for node in graph if graph[node].height == 0))
+sources = [node for node in graph if graph[node].height == 0]
+print(min(shortest_dist[node] for node in sources))
