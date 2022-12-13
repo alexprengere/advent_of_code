@@ -1,19 +1,10 @@
 import sys
+import ast
 import itertools
 import functools
 
 
-def cmp(left, right):
-    # When left == right: return 0
-    # When left < right: return -1
-    # When left > right: return 1
-    return (left > right) - (left < right)
-
-
 def compare_signal(left, right):
-    #
-    # Same return values as `cmp`
-    #
     if isinstance(left, list) and isinstance(right, int):
         right = [right]
 
@@ -21,7 +12,7 @@ def compare_signal(left, right):
         left = [left]
 
     elif isinstance(left, int) and isinstance(right, int):
-        return cmp(left, right)
+        return left - right
 
     # (list, list) case
     for li, ri in zip(left, right):
@@ -29,7 +20,7 @@ def compare_signal(left, right):
         if res != 0:
             return res
 
-    return cmp(len(left), len(right))
+    return len(left) - len(right)
 
 
 signal = [[]]
@@ -37,7 +28,7 @@ for row in sys.stdin:
     if row.isspace():
         signal.append([])
     else:
-        packet = eval(row.rstrip())
+        packet = ast.literal_eval(row)
         signal[-1].append(packet)
 
 
@@ -45,7 +36,7 @@ for row in sys.stdin:
 #
 total = 0
 for index, (left, right) in enumerate(signal, start=1):
-    if compare_signal(left, right) == -1:  # left < right
+    if compare_signal(left, right) <= 0:  # left < right
         total += index
 print(total)
 
