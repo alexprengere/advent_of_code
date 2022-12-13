@@ -4,9 +4,9 @@ from heapq import heappush, heappop
 
 
 def dijkstra(graph, source):
-    previous_nodes = {}  # to re-build the shortest known path
     shortest_dist = {node: sys.maxsize for node in graph}
     shortest_dist[source] = 0
+    previous_nodes = {}  # to re-build the shortest known path
 
     # This can be converted to a A* algorithm by inserting a heuristic
     # function when pushing / popping the heap.
@@ -24,7 +24,7 @@ def dijkstra(graph, source):
                 previous_nodes[neighbor] = min_node
                 heappush(heap, (dist_neighbor, neighbor))
 
-    return previous_nodes, shortest_dist
+    return shortest_dist, previous_nodes
 
 
 @dataclass
@@ -59,7 +59,7 @@ for node in graph:
 
 # PART 1
 #
-_, shortest_dist = dijkstra(graph, target)
+shortest_dist, _ = dijkstra(graph, target)
 print(shortest_dist[source])
 
 
