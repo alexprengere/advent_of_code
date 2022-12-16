@@ -3,7 +3,7 @@ import re
 
 _regex = re.compile(
     r"^Sensor at x=(-?\d+), y=(-?\d+):"
-    " closest beacon is at x=(-?\d+), y=(-?\d+)"
+    r" closest beacon is at x=(-?\d+), y=(-?\d+)"
 )
 
 
@@ -67,3 +67,32 @@ for nx, ny in get_candidates(grid):
     if has_possible_beacon(grid, (nx, ny)):
         print(nx * 4_000_000 + ny)
         break
+
+sys.exit()
+
+
+# PART 2 BIS :)
+#
+# I found this on Reddit and found it fascinating,
+# so I kept a copy adapted to my code, but I did
+# not come up with it in the first place.
+import z3
+
+
+def zabs(expr):
+    return z3.If(expr > 0, expr, -expr)
+
+
+opt = z3.Optimize()
+X, Y = z3.Int('X'), z3.Int('Y')
+
+opt.add(MIN <= X)
+opt.add(MIN <= Y)
+opt.add(X <= MAX)
+opt.add(Y <= MAX)
+for (sx, sy), dist in grid.items():
+    opt.add((zabs(sx - X) + zabs(sy - Y)) > dist)
+
+assert opt.check() == z3.sat
+res = opt.model()
+print(res[X].as_long() * 4_000_000 + res[Y].as_long())
