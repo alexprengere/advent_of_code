@@ -2,8 +2,8 @@ import sys
 import re
 
 _regex = re.compile(
-    "Sensor at x=([0-9-]+), y=([0-9-]+):"
-    " closest beacon is at x=([0-9-]+), y=([0-9-]+)"
+    r"^Sensor at x=(-?\d+), y=(-?\d+):"
+    " closest beacon is at x=(-?\d+), y=(-?\d+)"
 )
 
 
@@ -12,7 +12,7 @@ def manhattan(p0, p1):
     return abs(x1 - x0) + abs(y1 - y0)
 
 
-def possible(grid, p):
+def has_possible_beacon(grid, p):
     return all(manhattan(sensor, p) > dist for sensor, dist in grid.items())
 
 
@@ -23,16 +23,16 @@ for row in sys.stdin:
     beacons.add((bx, by))
 
 
+# PART 1
+#
 x_min, *_, x_max = sorted(sx for sx, _ in grid)
 dist_max = max(grid.values())
 
-
-# PART 1
-#
 x_range = range(x_min - dist_max, x_max + dist_max + 1)
 y = 2_000_000
 impossible = sum(
-    (x, y) not in beacons and not possible(grid, (x, y)) for x in x_range
+    not has_possible_beacon(grid, (x, y)) and (x, y) not in beacons
+    for x in x_range
 )
 print(impossible)
 
@@ -41,9 +41,29 @@ print(impossible)
 #
 MIN, MAX = 0, 4_000_000
 
-for x in range(MIN, MAX + 1):
-    print(x)
-    for y in range(MIN, MAX + 1):
-        if possible(grid, (x, y)):
-            print(x * 4_000_000 + y)
-            break
+
+def get_points_at_distance(p, dist):
+    # Yields all points at distance dist of p.
+    x, y = p
+    if dist == 0:
+        yield x, y
+    else:
+        for i in range(dist):
+            yield x - dist + i, y + i
+            yield x + i, y + dist - i
+            yield x + dist - i, y - i
+            yield x - i, y - dist + i
+
+
+def get_candidates(grid):
+    # Candidates are points exactly at "dist + 1" from a sensor
+    for sensor, dist in grid.items():
+        for nx, ny in get_points_at_distance(sensor, dist + 1):
+            if MIN <= nx <= MAX and MIN <= ny <= MAX:
+                yield nx, ny
+
+
+for nx, ny in get_candidates(grid):
+    if has_possible_beacon(grid, (nx, ny)):
+        print(nx * 4_000_000 + ny)
+        break
