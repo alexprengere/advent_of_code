@@ -1,7 +1,7 @@
 import sys
 import re
 import math
-from itertools import product
+from itertools import combinations
 
 
 def floyd_warhshall(graph):
@@ -152,7 +152,7 @@ for path, score in results.items():
 print(
     max(
         s1 + s2
-        for (p1, s1), (p2, s2) in product(results_by_set.items(), repeat=2)
+        for (p1, s1), (p2, s2) in combinations(results_by_set.items(), r=2)
         if not (p1 & p2)
     )
 )
