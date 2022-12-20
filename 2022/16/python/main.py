@@ -2,12 +2,14 @@ import sys
 import re
 import math
 from itertools import combinations
+from collections import defaultdict
 
 
 def floyd_warhshall(graph):
     dist = {}
     for node in graph:
         dist[node] = {n: math.inf for n in graph}
+        dist[node][node] = 0
         for neighbor in graph[node]:
             dist[node][neighbor] = 1
 
@@ -37,7 +39,6 @@ DISTANCES = floyd_warhshall(_graph)
 def play(path, start, remaining_time):
     # Play out a given path from a starting point
     path = iter(path)
-    is_open = {v: False for v in FLOWS}
     total_pressure = 0
     total_flow = 0
 
@@ -50,7 +51,6 @@ def play(path, start, remaining_time):
             wait -= 1
             continue
         position = target
-        is_open[position] = True
         total_flow += FLOWS[position]
         try:
             target = next(path)
@@ -116,43 +116,39 @@ print(best_score)
 
 # PART 2
 #
+MASK = {x: 1 << i for i, x in enumerate(FLOWS)}
+
 REMAINING_TIME = 26
 START = "AA"
 
-results = {}
-stack = [((), set(FLOWS))]
+# results store the path as a bitmask, which is way faster
+# than storing frozenset(path) as a key.
+results = defaultdict(int)
+stack = [(0, (), set(FLOWS))]
 
 while stack:
-    path, todo = stack.pop()
+    bits, path, todo = stack.pop()
     if not todo:
         score, _, _ = play(path, START, REMAINING_TIME)
-        results[path] = score
+        results[bits] = max(results[bits], score)
 
     for done in todo:
+        new_bits = bits | MASK[done]
         new_path = path + (done,)
         new_todo = todo - {done}
 
         score, *state = play(new_path, START, REMAINING_TIME)
         upper_bound = compute_upper_bound(new_todo, *state)
-        results[new_path] = score
+        results[new_bits] = max(results[new_bits], score)
         # Here we cannot cut the tree, as we are not trying
         # to only get the best score. We want all scores for later.
         if upper_bound > 0:
-            stack.append((new_path, new_todo))
-
-
-# Mostly to speed things up, we precompute the best score per
-# path set of points.
-results_by_set = {}
-for path, score in results.items():
-    key = frozenset(path)
-    if key not in results_by_set or results_by_set[key] < score:
-        results_by_set[key] = score
+            stack.append((new_bits, new_path, new_todo))
 
 print(
     max(
         s1 + s2
-        for (p1, s1), (p2, s2) in combinations(results_by_set.items(), r=2)
+        for (p1, s1), (p2, s2) in combinations(results.items(), r=2)
         if not (p1 & p2)
     )
 )
