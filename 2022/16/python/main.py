@@ -116,7 +116,7 @@ print(best_score)
 
 # PART 2
 #
-MASK = {x: 1 << i for i, x in enumerate(FLOWS)}
+MASK = {f: 1 << i for i, f in enumerate(FLOWS)}
 
 REMAINING_TIME = 26
 START = "AA"
