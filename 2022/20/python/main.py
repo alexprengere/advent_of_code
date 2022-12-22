@@ -1,49 +1,28 @@
 import sys
+from collections import deque
 
 KEY = 811_589_153  # 1 for part 1
 NB_MIXING = 10  # 1 for part 1
+SHIFT = 1000, 2000, 3000
 
-numbers = [int(num) * KEY for num in sys.stdin]
+# Numbers are replaced by their position in input,
+# this is to deal with duplicates.
+# Actual numbers are called values here.
+values = [int(v) * KEY for v in sys.stdin]
+numbers = deque(range(len(values)))
 N = len(numbers)
 
-before, after = [None] * N, [None] * N
-for index, _ in enumerate(numbers):
-    if index - 1 >= 0:
-        before[index] = index - 1
-    if index + 1 < len(numbers):
-        after[index] = index + 1
-before[0] = len(numbers) - 1
-after[len(numbers) - 1] = 0
-
-
-def move(before, after, index, nth):
-    # nth - 1 movements = stay in the same place
-    nth %= N - 1
-    if nth == 0:
-        return
-    target = nth_after(after, index, nth)
-
-    # 2 updated links at deletion site
-    before[after[index]] = before[index]
-    after[before[index]] = after[index]
-
-    # 4 created links at creation site
-    before[index] = target
-    before[after[target]] = index
-    after[index] = after[target]
-    after[target] = index
-
-
-def nth_after(after, index, nth):
-    for _ in range(nth % N):
-        index = after[index]
-    return index
-
-
 for _ in range(NB_MIXING):
-    for index, num in enumerate(numbers):
-        move(before, after, index, nth=num)
+    for num, val in enumerate(values):
+        val %= N - 1
+        index = numbers.index(num)
+        numbers.rotate(N - 1 - index)
+        numbers.pop()  # popping num from tail
+        numbers.rotate(-val)
+        numbers.append(num)
 
 
-index_0 = numbers.index(0)
-print(sum(numbers[nth_after(after, index_0, n)] for n in (1000, 2000, 3000)))
+num_0 = values.index(0)
+index_0 = numbers.index(num_0)
+
+print(sum(values[numbers[(index_0 + i) % N]] for i in SHIFT))
