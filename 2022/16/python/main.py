@@ -121,8 +121,9 @@ MASK = {f: 1 << i for i, f in enumerate(FLOWS)}
 REMAINING_TIME = 26
 START = "AA"
 
-# results store the path as a bitmask, which is way faster
-# than storing frozenset(path) as a key.
+# 'results' stores the path as a bitmask, which is way faster
+# than storing frozenset(path) for the key. This works because
+# there are not that many valves.
 results = defaultdict(int)
 stack = [(0, (), set(FLOWS))]
 

@@ -18,9 +18,7 @@ def neighbors(x, y, z):
 def surface(points):
     exposed = 0
     for point in points:
-        for n in neighbors(*point):
-            if n not in points:
-                exposed += 1
+        exposed += sum(n not in points for n in neighbors(*point))
     return exposed
 
 
@@ -61,4 +59,4 @@ while stack:
             stack.append(n)
 
 interior = grid - reachable - lava
-print(surface(lava | interior))
+print(surface(lava | interior))  # same as surface(lava) - surface(interior)
