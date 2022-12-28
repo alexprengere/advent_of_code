@@ -149,19 +149,16 @@ class State:
         self.robots.geode_collecting_started += 1
 
 
-LAST_MINUTE = 24
-
-
-def upper_bound(state):
-    remaining_time = LAST_MINUTE - state.time + 1
+def upper_bound(state, final_time):
+    remaining_time = final_time - state.time + 1
     return (
         state.geode
         + state.robots.geode_collecting * remaining_time
-        + remaining_time * (remaining_time + 1) // 2
+        + remaining_time * (remaining_time - 1) / 2
     )
 
 
-def evaluate_blueprint(text):
+def evaluate_blueprint(text, final_time):
     best_score, best = -1, None
 
     stack = [
@@ -175,7 +172,7 @@ def evaluate_blueprint(text):
 
         # It is not necessary to inspect actions on last turn,
         # as building things take 1 turn
-        if state.time == LAST_MINUTE:
+        if state.time == final_time:
             state.end_turn()
             if best_score < state.geode:
                 best_score = state.geode
@@ -184,40 +181,59 @@ def evaluate_blueprint(text):
 
         new_s = state.copy()
         new_s.end_turn()
-        if upper_bound(new_s) > best_score:
+        if best_score < upper_bound(new_s, final_time):
             stack.append(new_s)
 
         if state.can_build_geode_robot():
             new_s = state.copy()
             new_s.start_build_geode_robot()
             new_s.end_turn()
-            if upper_bound(new_s) > best_score:
+            if best_score < upper_bound(new_s, final_time):
                 stack.append(new_s)
 
         if state.can_build_obsidian_robot():
             new_s = state.copy()
             new_s.start_build_obsidian_robot()
             new_s.end_turn()
-            if upper_bound(new_s) > best_score:
+            if best_score < upper_bound(new_s, final_time):
                 stack.append(new_s)
 
         if state.can_build_clay_robot():
             new_s = state.copy()
             new_s.start_build_clay_robot()
             new_s.end_turn()
-            if upper_bound(new_s) > best_score:
+            if best_score < upper_bound(new_s, final_time):
                 stack.append(new_s)
 
         if state.can_build_ore_robot():
             new_s = state.copy()
             new_s.start_build_ore_robot()
             new_s.end_turn()
-            if upper_bound(new_s) > best_score:
+            if best_score < upper_bound(new_s, final_time):
                 stack.append(new_s)
 
-    quality_level = best.geode * best.blueprint.id_
-    # print(best.blueprint.id_, ":", best.geode, quality_level)
-    return quality_level
+    return best
 
 
-print(sum(evaluate_blueprint(row.rstrip()) for row in sys.stdin))
+_input = sys.stdin.read()
+
+# PART 1
+#
+final_time = 24
+result = 0
+for row in _input.splitlines():
+    best = evaluate_blueprint(row, final_time)
+    result += best.blueprint.id_ * best.geode
+    # print(best.blueprint.id_, ":", best.geode)
+print(result)
+
+
+# PART 2
+#
+final_time = 32
+result = 1
+for row in _input.splitlines()[:3]:
+    best = evaluate_blueprint(row, final_time)
+    result *= best.geode
+    # print(best.blueprint.id_, ":", best.geode)
+print(result)
