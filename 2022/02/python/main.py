@@ -1,12 +1,12 @@
 import sys
 
-ROCK = 1
-PAPER = 2
-SCISSORS = 3
+ROCK = 0
+PAPER = 1
+SCISSORS = 2
 
 score = 0
 for row in sys.stdin:
-    op_move, my_move = row.strip().split(" ")
+    op_move, outcome_code = row.strip().split(" ")
 
     if op_move == "A":
         op_shape = ROCK
@@ -15,14 +15,14 @@ for row in sys.stdin:
     elif op_move == "C":
         op_shape = SCISSORS
 
-    if my_move == "X":
-        my_shape = ROCK
-    elif my_move == "Y":
-        my_shape = PAPER
-    elif my_move == "Z":
-        my_shape = SCISSORS
+    if outcome_code == "X":
+        my_shape = (op_shape - 1) % 3
+    elif outcome_code == "Y":
+        my_shape = op_shape
+    elif outcome_code == "Z":
+        my_shape = (op_shape + 1) % 3
 
-    score += my_shape
+    score += my_shape + 1
     outcome = (my_shape - op_shape) % 3
     if outcome == 1:
         score += 6
