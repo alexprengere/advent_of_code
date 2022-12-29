@@ -99,6 +99,22 @@ class State:
     blueprint: Blueprint = None
     robots: Robots = None
 
+    @property
+    def key(self):
+        # That key does not contain the blueprint, as it is supposed to
+        # be used in the context of a single blueprint.
+        # It also does not contain geode levels and robots, as we want
+        # the key in terms of resources, not what we optimize.
+        robots = self.robots
+        return (
+            self.ore,
+            self.clay,
+            self.obsid,
+            robots.ore_collecting,
+            robots.clay_collecting,
+            robots.obsid_collecting,
+        )
+
     def copy(self):
         return State(
             time=self.time,
@@ -181,6 +197,7 @@ def upper_bound(state, final_time):
 def evaluate_blueprint(text, final_time):
     best_score, best = -1, None
 
+    visited = {}
     stack = [
         State(
             blueprint=Blueprint.from_text(text),
@@ -189,6 +206,13 @@ def evaluate_blueprint(text, final_time):
     ]
     while stack:
         state = stack.pop()
+
+        # Check if we already visited that state from another set of actions,
+        # and with more time remaining
+        key = state.key
+        if key in visited and visited[key] <= state.time:
+            continue
+        visited[key] = state.time
 
         # It is not necessary to inspect actions on last turn,
         # as building things take 1 turn
