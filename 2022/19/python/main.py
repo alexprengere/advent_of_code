@@ -65,18 +65,8 @@ class Robots:
     obsid_collecting_started: int = 0
     geode_collecting_started: int = 0
 
-    def finish_builds(self):
-        self.ore_collecting += self.ore_collecting_started
-        self.clay_collecting += self.clay_collecting_started
-        self.obsid_collecting += self.obsid_collecting_started
-        self.geode_collecting += self.geode_collecting_started
-
-        self.ore_collecting_started = 0
-        self.clay_collecting_started = 0
-        self.obsid_collecting_started = 0
-        self.geode_collecting_started = 0
-
     def copy(self):
+        # Custom copies are much faster than copy.copy()
         return Robots(
             ore_collecting=self.ore_collecting,
             clay_collecting=self.clay_collecting,
@@ -99,23 +89,8 @@ class State:
     blueprint: Blueprint = None
     robots: Robots = None
 
-    @property
-    def key(self):
-        # That key does not contain the blueprint, as it is supposed to
-        # be used in the context of a single blueprint.
-        # It also does not contain geode levels and robots, as we want
-        # the key in terms of resources, not what we optimize.
-        robots = self.robots
-        return (
-            self.ore,
-            self.clay,
-            self.obsid,
-            robots.ore_collecting,
-            robots.clay_collecting,
-            robots.obsid_collecting,
-        )
-
     def copy(self):
+        # Custom copies are much faster than copy.copy()
         return State(
             time=self.time,
             ore=self.ore,
@@ -127,17 +102,31 @@ class State:
         )
 
     def end_turn(self):
-        robots = self.robots
+        _robots = self.robots
 
         # Collection
-        self.ore += robots.ore_collecting
-        self.clay += robots.clay_collecting
-        self.obsid += robots.obsid_collecting
-        self.geode += robots.geode_collecting
+        self.ore += _robots.ore_collecting
+        self.clay += _robots.clay_collecting
+        self.obsid += _robots.obsid_collecting
+        self.geode += _robots.geode_collecting
 
-        robots.finish_builds()
+        # Moves "started" robots to actual robots
+        _robots.ore_collecting += _robots.ore_collecting_started
+        _robots.clay_collecting += _robots.clay_collecting_started
+        _robots.obsid_collecting += _robots.obsid_collecting_started
+        _robots.geode_collecting += _robots.geode_collecting_started
+
+        _robots.ore_collecting_started = 0
+        _robots.clay_collecting_started = 0
+        _robots.obsid_collecting_started = 0
+        _robots.geode_collecting_started = 0
+
         self.time += 1
 
+    # We only build robot 'X' when:
+    # 1) we have the resources
+    # 2) we are not already in a position to produce enough 'X'
+    #    resources to cover the 'X' cost of any robot (except geodes)
     def can_build_ore_robot(self):
         bp = self.blueprint
         return (
@@ -186,11 +175,35 @@ class State:
 
 
 def upper_bound(state, final_time):
+    # This is the theoretical maximum number of  geodes you
+    # can have from a state and the final time. It is the sum of:
+    # 1) the current geodes
+    # 2) the geodes produced from the current robots
+    # 3) the geodes produced if you could build a geode robot
+    #    each remaining turn.
     remaining_time = final_time - state.time + 1
     return (
         state.geode
         + state.robots.geode_collecting * remaining_time
         + remaining_time * (remaining_time - 1) / 2
+    )
+
+
+def build_state_key(state):
+    # That key does not contain the blueprint, as it is supposed to
+    # be used in the context of a single blueprint.
+    # It also omits the "started" robots, as the key is computed at
+    # the beginning of a turn, where no robots has been started yet.
+    _robots = state.robots
+    return (
+        state.ore,
+        state.clay,
+        state.obsid,
+        state.geode,
+        _robots.ore_collecting,
+        _robots.clay_collecting,
+        _robots.obsid_collecting,
+        _robots.geode_collecting,
     )
 
 
@@ -209,7 +222,7 @@ def evaluate_blueprint(text, final_time):
 
         # Check if we already visited that state from another set of actions,
         # and with more time remaining
-        key = state.key
+        key = build_state_key(state)
         if key in visited and visited[key] <= state.time:
             continue
         visited[key] = state.time
