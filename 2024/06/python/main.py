@@ -1,5 +1,5 @@
 import sys
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, replace, astuple
 
 data = sys.stdin.read().splitlines()
 
@@ -8,47 +8,31 @@ COLS = len(data[0])
 
 
 def in_bounds(position):
-    r, c = position
-    return 0 <= r < ROWS and 0 <= c < COLS
+    return 0 <= position.imag < ROWS and 0 <= position.real < COLS
 
 
 @dataclass
 class Guard:
-    position: tuple
-    facing: int  # index in "^>v<"
+    position: complex
+    direction: complex
 
-    def turn_right(self):
-        # We could have implemented this with a dict matching the directions
-        # to their counterparts after turning right, but this is faster
-        if self.facing < 3:
-            self.facing += 1
-        else:  # 3 => 0
-            self.facing = 0
 
-    def position_forward(self):
-        r, c = self.position
-        if self.facing == 0:
-            return r - 1, c
-        if self.facing == 1:
-            return r, c + 1
-        if self.facing == 2:
-            return r + 1, c
-        if self.facing == 3:
-            return r, c - 1
-
-    def state(self):
-        return (*self.position, self.facing)  # immutable representation
-
+cell_to_dir = {
+    "^": -1j,
+    ">": +1,
+    "v": +1j,
+    "<": -1,
+}
 
 blocks = set()
 guard = None
 for r, row in enumerate(data):
     for c, cell in enumerate(row):
-        position = r, c
+        position = complex(c, r)
         if cell == "#":
             blocks.add(position)
         elif cell in "^>v<":
-            guard = Guard(position, cell.index(cell))
+            guard = Guard(position, cell_to_dir[cell])
 
 assert guard is not None  # for mypy
 
@@ -59,12 +43,12 @@ def get_guard_positions(guard, blocks):
     guard = replace(guard)  # copy to not modify the original
 
     positions = {guard.position}
-    while in_bounds(position := guard.position_forward()):
+    while in_bounds(position := guard.position + guard.direction):
         if position not in blocks:
             guard.position = position
             positions.add(position)
         else:
-            guard.turn_right()
+            guard.direction *= 1j
 
     return positions
 
@@ -77,17 +61,17 @@ print(len(get_guard_positions(guard, blocks)))
 def detect_loop(guard, blocks):
     guard = replace(guard)  # copy to not modify the original
 
-    past_states = {guard.state()}
-    while in_bounds(position := guard.position_forward()):
+    past_states = {astuple(guard)}
+    while in_bounds(position := guard.position + guard.direction):
         if position not in blocks:
             guard.position = position
         else:
-            guard.turn_right()
+            guard.direction *= 1j
 
-        state = guard.state()
-        if state in past_states:
-            return True  # loop detected
-        past_states.add(state)
+            state = astuple(guard)
+            if state in past_states:
+                return True  # loop detected
+            past_states.add(state)
 
     return False  # guard just left the grid
 
