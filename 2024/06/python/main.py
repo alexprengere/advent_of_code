@@ -9,7 +9,7 @@ ROWS = len(data)
 COLS = len(data[0])
 
 
-@dataclass
+@dataclass(slots=True)
 class Guard:
     col: int
     row: int

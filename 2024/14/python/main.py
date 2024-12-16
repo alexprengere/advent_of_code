@@ -15,7 +15,7 @@ assert HEIGHT % 2 == 1
 assert math.gcd(WIDTH, HEIGHT) == 1
 
 
-@dataclass
+@dataclass(slots=True)
 class Robot:
     px: int
     py: int
