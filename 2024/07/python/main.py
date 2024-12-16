@@ -1,21 +1,12 @@
 import sys
-import functools
 from operator import add, mul
 
 
-@functools.lru_cache(maxsize=1024)
-def nb_digits(x):
-    if x == 0:
-        return 1
-    d = 0
-    while x > 0:
-        x //= 10
-        d += 1
-    return d
-
-
 def concat(a, b):
-    return a * (10 ** nb_digits(b)) + b
+    offset = 1
+    while offset <= b:
+        offset *= 10
+    return a * offset + b
 
 
 OPERATORS = {
