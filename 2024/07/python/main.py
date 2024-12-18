@@ -1,5 +1,6 @@
 import sys
 from operator import add, mul
+import multiprocessing
 
 
 def concat(a, b):
@@ -16,21 +17,19 @@ OPERATORS = {
 }
 
 
-def find_solution(test_value, numbers, operators):
+def search(test_value, numbers, operators):
     op_functions = [OPERATORS[name] for name in operators]
 
     # Rather than doing the full itertools.product, we use DFS to only
     # pursue operators that do not exceed the target test_value.
     stack = [(1, numbers[0])]  # (next index in numbers, current value)
-    found = False
 
     while stack:
         index, value = stack.pop()
 
         if index == len(numbers):  # terminal node, we check against test_value
             if value == test_value:
-                found = True
-                break
+                return test_value
         else:
             number = numbers[index]
             for op_func in op_functions:
@@ -40,17 +39,15 @@ def find_solution(test_value, numbers, operators):
                 if new_value <= test_value:
                     stack.append((index + 1, new_value))
 
-    return found
+    return 0  # never found
 
 
-def main(operations, operators):
-    print(
-        sum(
-            test_value
-            for test_value, numbers in operations
-            if find_solution(test_value, numbers, operators)
-        )
+def main(pool, operations, operators):
+    results = pool.starmap(
+        search,
+        [(test_value, numbers, operators) for test_value, numbers in operations],
     )
+    print(sum(results))
 
 
 operations = []
@@ -60,5 +57,6 @@ for row in sys.stdin:
     numbers = list(map(int, numbers.split()))
     operations.append((test_value, numbers))
 
-main(operations, ["+", "*"])
-main(operations, ["+", "*", "||"])
+with multiprocessing.Pool() as pool:
+    main(pool, operations, ["+", "*"])
+    main(pool, operations, ["+", "*", "||"])
