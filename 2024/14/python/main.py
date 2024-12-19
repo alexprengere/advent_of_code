@@ -171,4 +171,4 @@ print(xy_turn)
 # Just for fun, let's see that tree!
 for robot in robots:
     robot.move(turns=xy_turn - last_turn)
-show_grid(robots)
+# show_grid(robots)

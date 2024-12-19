@@ -39,7 +39,7 @@ def show(path):
 
 
 def get_neighbors(node, walls):
-    # Returns neighbors of a node with their cost, in this
+    # Returns neighbors of a node with their distance, in this
     # context, a node is a tuple of (point, direction)
     (x, y), (dx, dy) = node
 
@@ -55,18 +55,38 @@ def get_neighbors(node, walls):
 
 # This is a pretty standard Dijkstra algorithm, with the only difference
 # being that we track in previous_nodes all the nodes that can reach a node
-# with the same cost. This is because we want to backtrack from the end to the
-# start, and go through all possible paths.
+# with the same distance. This is because we want to backtrack from the end to
+# the start, and go through all possible paths matching the minimum distance.
+# We do not go for the A* algorithm, as it would not changed much in this case,
+# I tried it :). Due to the maze shape, A* heuristics are not very useful.
 start_dir = (1, 0)
 source = (start, start_dir)
 shortest_dist = {source: 0}
 previous_nodes = defaultdict(list)  # node -> [previous_node, ...]
+
+# We want to record all the 'end' nodes that have the minimum distance to reach the
+# end position. In theory there might be multiple directions to reach the end node
+# with the same distance. In practive with AoC input, there was only one.
+dist_min_to_end = None
+end_nodes_with_min_dist = []
 
 seen = set()
 heap = [(0, source)]
 while heap:
     dist_min_node, min_node = heappop(heap)
     seen.add(min_node)
+
+    min_point, _ = min_node
+    if min_point == end:
+        # Reaching the end means we can break early, but only if we have
+        # exceeded the minimum distance to reach the end node. There can be
+        # multiple path to the end node with the same distance. We only want
+        # to keep the ones that have the minimum distance.
+        if dist_min_to_end is None:
+            dist_min_to_end = dist_min_node
+        elif dist_min_node > dist_min_to_end:
+            break  # not interested in non-optimal paths to 'end'
+        end_nodes_with_min_dist.append(min_node)
 
     for dist, neighbor in get_neighbors(min_node, walls):
         if neighbor in seen:
@@ -75,44 +95,24 @@ while heap:
         # This is not the standard Dijkstra algorithm, where you would only
         # keep the previous neighbor that has the shortest distance.
         shortest_dist_neighbor = shortest_dist.get(neighbor, math.inf)
-        if dist_neighbor <= shortest_dist_neighbor:
-            if dist_neighbor < shortest_dist_neighbor:
-                previous_nodes[neighbor] = [min_node]
-                shortest_dist[neighbor] = dist_neighbor
-            else:
-                previous_nodes[neighbor].append(min_node)
+        if dist_neighbor < shortest_dist_neighbor:
+            previous_nodes[neighbor] = [min_node]
+            shortest_dist[neighbor] = dist_neighbor
             heappush(heap, (dist_neighbor, neighbor))
+        elif dist_neighbor == shortest_dist_neighbor:
+            previous_nodes[neighbor].append(min_node)
 
-# After the Dijkstra algorithm, we have the shortest distance to all nodes,
-# now we need to find the shortest path to the end node. We need to loop
-# through all the nodes and find those whose position is 'end', as there
-# can be multiple directions as well.
-min_cost = math.inf
-for node, cost in shortest_dist.items():
-    point, _ = node
-    if point == end and cost < min_cost:
-        min_cost = cost
 
 # PART 1
 #
 # Just showing the minimum cost to reach the end node
-print(min_cost)
+print(dist_min_to_end)
 
 
 # PART 2
 #
 # We need to backtrack from the end to the start, and go through all possible paths.
-# First we need to find all the nodes that have the minimum cost to reach the end node.
-# In theory there might be multiple directions to reach the end node with the same cost.
-# In practive with AoC input, there was only one.
-min_cost_end_nodes = []
-for node, cost in shortest_dist.items():
-    point, _ = node
-    if point == end and cost == min_cost:
-        min_cost_end_nodes.append(node)
-
-
-stack = [*min_cost_end_nodes]
+stack = [*end_nodes_with_min_dist]
 seen = set()
 while stack:
     node = stack.pop()
