@@ -20,7 +20,7 @@ OPERATORS = {
 def search(test_value, numbers, operators):
     op_functions = [OPERATORS[name] for name in operators]
 
-    # Rather than doing the full itertools.product, we use DFS to only
+    # Rather than doing the full itertools.product, we use BFS to only
     # pursue operators that do not exceed the target test_value.
     stack = [(1, numbers[0])]  # (next index in numbers, current value)
 
