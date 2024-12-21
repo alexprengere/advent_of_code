@@ -1,53 +1,50 @@
 import sys
-from operator import add, mul
-import multiprocessing
 
 
-def concat(a, b):
-    offset = 1
-    while offset <= b:
-        offset *= 10
-    return a * offset + b
-
-
-OPERATORS = {
-    "+": add,
-    "*": mul,
-    "||": concat,
-}
-
-
-def search(test_value, numbers, operators):
-    op_functions = [OPERATORS[name] for name in operators]
-
-    # Rather than doing the full itertools.product, we use BFS to only
-    # pursue operators that do not exceed the target test_value.
-    stack = [(1, numbers[0])]  # (next index in numbers, current value)
+def search(test_value, numbers, part=1):
+    # Rather than going from the initial number to the target test_value, we
+    # go from the target test_value to the initial number. This way we can
+    # stop early of it turns out the current value is not reachable using
+    # the available operators (for example, if the current value cannot be
+    # the result of a multiplication or concatenation of the previous value).
+    stack = [(-1, test_value)]  # (next index in numbers, current value)
 
     while stack:
         index, value = stack.pop()
 
-        if index == len(numbers):  # terminal node, we check against test_value
-            if value == test_value:
-                return test_value
-        else:
-            number = numbers[index]
-            for op_func in op_functions:
-                new_value = op_func(value, number)
+        if index == -len(numbers):  # terminal node
+            if numbers[0] == value:
+                return True
+            continue
 
-                # As numbers can only grow, only pursue if we are below target
-                if new_value <= test_value:
-                    stack.append((index + 1, new_value))
+        # First we check if the current value is reachable using addition
+        # value = 185, numbers[index] = 5 => new_value = 180
+        if value >= numbers[index]:
+            stack.append((index - 1, value - numbers[index]))
 
-    return 0  # never found
+        # Second we check if the current value is reachable using multiplication
+        # value = 190, numbers[index] = 10 => new_value = 19
+        if value % numbers[index] == 0:
+            stack.append((index - 1, value // numbers[index]))
+
+        if part == 1:
+            continue
+        # Third we check if the current value is reachable using concatenation
+        # value = 123456, numbers[index] = 56 => new_value = 1234
+        value_s = str(value)
+        number_s = str(numbers[index])
+        if len(value_s) > len(number_s) and value_s.endswith(number_s):
+            stack.append((index - 1, int(value_s[: -len(number_s)])))
+
+    return False
 
 
-def main(pool, operations, operators):
-    results = pool.starmap(
-        search,
-        [(test_value, numbers, operators) for test_value, numbers in operations],
-    )
-    print(sum(results))
+def main(operations, part):
+    total = 0
+    for test_value, numbers in operations:
+        if search(test_value, numbers, part):
+            total += test_value
+    print(total)
 
 
 operations = []
@@ -57,6 +54,5 @@ for row in sys.stdin:
     numbers = list(map(int, numbers.split()))
     operations.append((test_value, numbers))
 
-with multiprocessing.Pool() as pool:
-    main(pool, operations, ["+", "*"])
-    main(pool, operations, ["+", "*", "||"])
+main(operations, part=1)
+main(operations, part=2)
