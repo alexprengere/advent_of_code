@@ -1,7 +1,7 @@
 import sys
 import math
 from heapq import heappop, heappush
-import itertools
+from itertools import product
 import functools
 
 # +---+---+---+
@@ -43,12 +43,12 @@ NUMPAD = {  # key => [(press, neighbor), ...]
 }
 
 
-def shortest_presses_between_keys(start, end, neighbors):
+def shortest_paths(start, end, neighbors):
     """
     Given a start and end position on a pad (keypad or numpad), this will
     yield all shortest paths in the form of presses.
 
-    >>> list(shortest_presses_between_keys("A", "2", KEYPAD))
+    >>> list(shortest_paths("A", "2", KEYPAD))
     ['<^', '^<']
     """
     shortest_dist = {start: 0}
@@ -75,26 +75,35 @@ def shortest_presses_between_keys(start, end, neighbors):
                 heappush(heap, (dist_neighbor, neighbor, presses + [press]))
 
 
-def shortest_presses(code, neighbors):
+# Pre-compute all shortest paths between keys
+paths_cache: dict[str, dict] = {
+    "KEYPAD": {},
+    "NUMPAD": {},
+}
+for start, end in product(KEYPAD, repeat=2):
+    paths_cache["KEYPAD"][start, end] = tuple(shortest_paths(start, end, KEYPAD))
+for start, end in product(NUMPAD, repeat=2):
+    paths_cache["NUMPAD"][start, end] = tuple(shortest_paths(start, end, NUMPAD))
+
+
+def shortest_presses(code, padtype):
     """Cartesian product of shortest presses between key pairs of a code.
 
     This time the A keypress is added, as we need to get each code character.
 
-    >>> list(shortest_presses("326", KEYPAD))
+    >>> list(shortest_presses("326", "KEYPAD"))
     ['^A<A>^A', '^A<A^>A']
-    >>> list(shortest_presses("A26", KEYPAD))
+    >>> list(shortest_presses("A26", "KEYPAD"))
     ['A<^A>^A', 'A<^A^>A', 'A^<A>^A', 'A^<A^>A']
     """
-    presses_per_step = []
-    prev = "A"
-    for current in code:
-        presses_per_step.append(
-            list(shortest_presses_between_keys(prev, current, neighbors))
-        )
-        prev = current
+    paths_per_step = []
+    prev_key = "A"
+    for key in code:
+        paths_per_step.append(paths_cache[padtype][prev_key, key])
+        prev_key = key
 
-    for presses in itertools.product(*presses_per_step):
-        yield "A".join(presses) + "A"
+    for paths in product(*paths_per_step):
+        yield "A".join(paths) + "A"  # ['^>', '>v'] -> '^>A>vA'
 
 
 def split_chunks(presses):
@@ -114,13 +123,13 @@ def count(presses, numpad):
 
     total = 0
     for chunk in split_chunks(presses):
-        total += min(count(p, numpad - 1) for p in shortest_presses(chunk, NUMPAD))
+        total += min(count(p, numpad - 1) for p in shortest_presses(chunk, "NUMPAD"))
     return total
 
 
 def complexity(code, numpad):
     # We first apply the shortest presses on the keypad, then call the numpad count
-    min_count = min(count(p, numpad) for p in shortest_presses(code, KEYPAD))
+    min_count = min(count(p, numpad) for p in shortest_presses(code, "KEYPAD"))
     return min_count * int(code[:-1])
 
 
