@@ -5,12 +5,12 @@ secrets = [int(row) for row in sys.stdin]
 
 
 def evolve(secret):
-    secret ^= secret * 64
-    secret %= 0x1000000
-    secret ^= secret // 32
-    secret %= 0x1000000
-    secret ^= secret * 2048
-    secret %= 0x1000000
+    # The pruning process uses modulo 0x1000000 to keep the secret in the
+    # range [0, 0xFFFFFF]. Here we used a mask instead, and we do the modulo
+    # before the mix, as it gives the same results anyway.
+    secret ^= (secret * 64) & 0xFFFFFF
+    secret ^= (secret // 32) & 0xFFFFFF
+    secret ^= (secret * 2048) & 0xFFFFFF
     return secret
 
 
