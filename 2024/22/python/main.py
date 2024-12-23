@@ -15,16 +15,19 @@ def evolve(secret):
 
 
 # I used to represent the sequence of last 4 diffs using a deque(maxlen=4),
-# but as we know each of the 4 numbers is in the range [-9, 9], we can encode
-# them in 5 bits each: adding 9 gives the [0, 18], and 2**4 <= 18 < 2**5.
-# So our number looks like this: 0b00000_00000_00000_00000
-#                                  ^^^^^             ^^^^^
-#                               newest diff       oldest diff
-# Using this representation yields impressive results on PyPy, not so much on CPython.
+# but as we know each of the 4 numbers is in the range [-9, 9], adding 9 gives
+# the range [0, 18], so we can encode then in "base 19". This gives a single
+# integer to represent the 4 numbers, and adding a new diff is just dividing
+# by the base (19), this works like a right bitshift in that base, and adding
+# the number diff in the highest bits.
+# Using this representation yields impressive results on PyPy, meh on CPython.
 
 last_secrets_sum = 0  # for part 1
 price_per_seq: dict[int, int] = Counter()  # for part 2
-seq_seen_for_secret = set()
+
+# We only want to keep the first sequence seen for each secret, so we use
+# this set to record each sequence.
+seq_seen_for_secret: set[int] = set()
 
 for secret in secrets:
     seq_seen_for_secret.clear()
@@ -37,16 +40,12 @@ for secret in secrets:
     for _ in range(3):
         secret = evolve(secret)
         price = secret % 10
-        seq >>= 5
-        seq |= (price - prev_price + 9) << 15
+        seq = (seq // 19) + (19**3) * (price - prev_price + 9)
 
     for _ in range(3, 2000):
         secret = evolve(secret)
         price = secret % 10
-        # Updating seq by right shifting by 5 bits to remove the oldest diff,
-        # and adding the newest diff in the leftmost 5 bits.
-        seq >>= 5
-        seq |= (price - prev_price + 9) << 15
+        seq = (seq // 19) + (19**3) * (price - prev_price + 9)
 
         if seq not in seq_seen_for_secret:
             seq_seen_for_secret.add(seq)
