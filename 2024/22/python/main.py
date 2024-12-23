@@ -20,35 +20,40 @@ def evolve(secret):
 # So our number looks like this: 0b00000_00000_00000_00000
 #                                  ^^^^^             ^^^^^
 #                               newest diff       oldest diff
-# The initial value is 11111_11111_11111_11111, and note that as 11111 does
-# not represent a value in [0, 18], we can test this to know if we do not
-# have the 4 diffs yet (by masking with 0b11111).
 # Using this representation yields impressive results on PyPy, not so much on CPython.
 
-evolved_secrets_sum = 0  # for part 1
+last_secrets_sum = 0  # for part 1
 price_per_seq: dict[int, int] = Counter()  # for part 2
 seq_seen_for_secret = set()
 
 for secret in secrets:
     seq_seen_for_secret.clear()
 
-    seq = (1 << 20) - 1
-    last_price = secret % 10
+    seq = 0
+    prev_price = secret % 10
 
-    for _ in range(2000):
+    # To avoid the first 3 diffs to be counted, we roll out the loop 3 times.
+    # This avoids to have repeated checks for this in the main loop.
+    for _ in range(3):
+        secret = evolve(secret)
+        price = secret % 10
+        seq >>= 5
+        seq |= (price - prev_price + 9) << 15
+
+    for _ in range(3, 2000):
         secret = evolve(secret)
         price = secret % 10
         # Updating seq by right shifting by 5 bits to remove the oldest diff,
         # and adding the newest diff in the leftmost 5 bits.
         seq >>= 5
-        seq |= (price - last_price + 9) << 15
+        seq |= (price - prev_price + 9) << 15
 
-        if seq not in seq_seen_for_secret and seq & 0b11111 != 0b11111:
+        if seq not in seq_seen_for_secret:
             seq_seen_for_secret.add(seq)
             price_per_seq[seq] += price
 
-        last_price = price
-    evolved_secrets_sum += secret
+        prev_price = price
+    last_secrets_sum += secret
 
-print(evolved_secrets_sum)
+print(last_secrets_sum)
 print(max(price_per_seq.values()))
