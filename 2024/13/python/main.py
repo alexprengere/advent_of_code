@@ -61,13 +61,10 @@ for a_button, b_button, prize in machines:
     total_cost += solve(a_button, b_button, (p_x + offset, p_y + offset))
 print(total_cost)
 
-exit()
-
 
 # BONUS PART
 #
-# This is a more general solution using z3. It is not needed for AoC,
-# note the exit() above.
+# This is a more general solution using z3. It is not needed for AoC.
 #
 def solve_with_z3(a_button, b_button, prize):
     import z3
