@@ -1,38 +1,32 @@
 import sys
 
 
-def move(start, shift):
-    crosses, dial = divmod(start + shift, 100)
-    crosses = abs(crosses)
-    if shift < 0:
-        # The negative direction require some adjustments
-        # * starting at 0 and going negative does not count as crossing zero
-        # * ending at 0 is not already counted as crossing zero, so we add 1
-        if start == 0:
-            crosses -= 1
-        if dial == 0:
-            crosses += 1
-    return crosses, dial
-
-
 _input = sys.stdin.readlines()
 
 DIRECTIONS = {"R": 1, "L": -1}
+SIZE = 100
+
+dial = 50
 points_at_zero = 0
 crosses_zero = 0
-dial = 50
 
 for row in _input:
+    prev_dial = dial
     direction, n = row[0], int(row[1:])
-    if direction == "R":
-        shift = n
-    elif direction == "L":
-        shift = -n
+    shift = n * DIRECTIONS[direction]
 
-    crosses, dial = move(dial, n * DIRECTIONS[direction])
-    crosses_zero += crosses
+    c, dial = divmod(dial + shift, SIZE)
     if dial == 0:
         points_at_zero += 1
+    # The negative direction require some adjustments
+    # * starting at 0 and going negative does not count as crossing zero
+    # * ending at 0 is not already counted as crossing zero, so we add 1
+    crosses_zero += abs(c)
+    if shift < 0:
+        if prev_dial == 0:
+            crosses_zero -= 1
+        if dial == 0:
+            crosses_zero += 1
 
 print(points_at_zero)
 print(crosses_zero)
