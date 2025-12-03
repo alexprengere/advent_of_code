@@ -1,5 +1,6 @@
 import sys
 
+
 def is_invalid_part1(n):
     n = str(n)
     half = len(n) // 2
@@ -24,7 +25,7 @@ _input = sys.stdin.read().rstrip()
 total_part_1 = 0
 total_part_2 = 0
 
-for a, b in [r.split('-') for r in  _input.split(',')]:
+for a, b in [r.split("-") for r in _input.split(",")]:
     for n in range(int(a), int(b) + 1):
         if is_invalid_part1(n):
             total_part_1 += n
