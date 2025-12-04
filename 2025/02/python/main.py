@@ -22,6 +22,10 @@ def is_invalid_part2(n):
 
 _input = sys.stdin.read().rstrip()
 
+
+# Note: this can be completely solved analytically, as this is basically
+# a counting problem: we need to count the numbers we can build by
+# repeating substrings, in a given number range.
 total_part_1 = 0
 total_part_2 = 0
 
