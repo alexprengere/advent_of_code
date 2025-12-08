@@ -87,3 +87,27 @@ def timelines(beam):
 
 
 print(timelines(source))
+# print(timelines.cache_info())
+
+"""
+# Another way to do Part 2:
+# This uses dynamic programming instead of recursion with memoization.
+# The advantage is that it doesn't use the call stack, but the disadvantage is
+# that it will compute the full grid even if not all points are needed, like
+# the points left/right of the source.
+
+dp = {}
+for x in range(COLS):
+    dp[Point(x, ROWS)] = 1  # base case: one way to exit from below the last row
+
+for y in range(ROWS - 1, -1, -1):
+    for x in range(COLS):
+        point, down = Point(x, y), Point(x, y + 1)
+        if point in splitters:
+            dp[point] = dp[down.left()] + dp[down.right()]
+        else:
+            dp[point] = dp[down]
+
+print(dp[source])
+# print(len(dp))
+"""
