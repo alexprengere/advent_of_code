@@ -145,5 +145,42 @@ def solve_part_2(machine):
     return sum(x)
 
 
+# Here is an alternative implementation using the Z3 SMT solver.
+# It is fast but still 10x slower than the scipy version.
+from z3 import Int, Optimize, Sum, sat
+
+
+def solve_part_2_z3(machine):
+    _, _, buttons_as_list, joltage = machine
+
+    # Build B the same way as before (rows = lights, cols = buttons)
+    B = np.zeros((len(joltage), len(buttons_as_list)), dtype=int)
+    for i, button in enumerate(buttons_as_list):
+        for j in button:
+            B[j, i] = 1
+
+    opt = Optimize()
+
+    # Integer decision vars: how many times each button is pressed
+    n_vars = len(buttons_as_list)
+    x = [Int(f"x_{i}") for i in range(n_vars)]
+    for xi in x:
+        opt.add(xi >= 0)
+
+    # Constraints: Bx == J
+    for j in range(len(joltage)):
+        opt.add(Sum([B[j, i] * x[i] for i in range(n_vars)]) == joltage[j])
+
+    # Minimize total presses
+    opt.minimize(Sum(x))
+
+    if opt.check() != sat:
+        raise ValueError("No solution found")
+
+    m = opt.model()
+    return sum(m.eval(xi).as_long() for xi in x)
+
+
 # print(sum(map(solve_part_2_only_for_example, machines)))
+# print(sum(map(solve_part_2_z3, machines)))
 print(sum(map(solve_part_2, machines)))
