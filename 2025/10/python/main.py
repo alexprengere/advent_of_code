@@ -1,6 +1,7 @@
 import sys
 from collections import deque
 from itertools import combinations
+from functools import cache
 
 
 def parse_button_as_int(s):
@@ -71,7 +72,7 @@ print(sum(map(solve_part_1, machines)))
 # to explore all possible states. It works fine for the example, but is too
 # slow for the full input, even with some pruning based on joltage values.
 #
-def solve_part_2_only_for_example(machine):
+def solve_part_2_bfs(machine):
     _, _, buttons_as_list, joltage = machine
     target = tuple(joltage)
 
@@ -118,11 +119,10 @@ def solve_part_2_only_for_example(machine):
 #
 # Then we solve for x the system Bx = J where J is the joltage vector
 #
-import numpy as np
-from scipy.optimize import milp, LinearConstraint, Bounds
+def solve_part_2_milp(machine):
+    import numpy as np
+    from scipy.optimize import milp, LinearConstraint, Bounds
 
-
-def solve_part_2(machine):
     _, _, buttons_as_list, joltage = machine
 
     B = np.zeros((len(joltage), len(buttons_as_list)), dtype=int)
@@ -145,5 +145,87 @@ def solve_part_2(machine):
     return sum(x)
 
 
-# print(sum(map(solve_part_2_only_for_example, machines)))
-print(sum(map(solve_part_2, machines)))
+# Here is an alternative implementation using the Z3 SMT solver.
+# It is fast but still 10x slower than the scipy version.
+#
+def solve_part_2_z3(machine):
+    import numpy as np
+    from z3 import Int, Optimize, Sum, sat
+
+    _, _, buttons_as_list, joltage = machine
+
+    # Build B the same way as before (rows = lights, cols = buttons)
+    B = np.zeros((len(joltage), len(buttons_as_list)), dtype=int)
+    for i, button in enumerate(buttons_as_list):
+        for j in button:
+            B[j, i] = 1
+
+    opt = Optimize()
+
+    # Integer decision vars: how many times each button is pressed
+    n_vars = len(buttons_as_list)
+    x = [Int(f"x_{i}") for i in range(n_vars)]
+    for xi in x:
+        opt.add(xi >= 0)
+
+    # Constraints: Bx == J
+    for j in range(len(joltage)):
+        opt.add(Sum([B[j, i] * x[i] for i in range(n_vars)]) == joltage[j])
+
+    # Minimize total presses
+    opt.minimize(Sum(x))
+
+    if opt.check() != sat:
+        raise ValueError("No solution found")
+
+    m = opt.model()
+    return sum(m.eval(xi).as_long() for xi in x)
+
+
+# This last implementation idea is extracted from:
+# /r/adventofcode/comments/1pk87hl/2025_day_10_part_2_bifurcate_your_way_to_victory/
+#
+@cache
+def solve_diagram(diagram, buttons_as_int):
+    result = []
+    for presses in range(1 + len(buttons_as_int)):
+        for comb in combinations(buttons_as_int, presses):
+            lights = 0
+            for button in comb:
+                lights ^= button
+            if lights == diagram:
+                result.append((presses, comb))
+    return result
+
+
+@cache
+def _solve_recursive(joltage, buttons_as_int):
+    # Convert modulos to a single integer bitmask
+    diagram = 0
+    for i, m in enumerate(joltage):
+        if m % 2 == 1:
+            diagram |= 1 << i
+    min_presses = 1e9
+    for presses, comb in solve_diagram(diagram, buttons_as_int):
+        remaining = list(joltage)
+        for pos in range(len(remaining)):
+            remaining[pos] -= sum((button >> pos) & 1 for button in comb)
+        if any(r < 0 for r in remaining):
+            continue
+        if any(r > 0 for r in remaining):
+            divided = tuple(r // 2 for r in remaining)
+            presses += 2 * _solve_recursive(divided, buttons_as_int)
+        if presses < min_presses:
+            min_presses = presses
+    return min_presses
+
+
+def solve_part_2_recursive(machine):
+    _, buttons_as_int, _, joltage = machine
+    return _solve_recursive(tuple(joltage), tuple(buttons_as_int))
+
+
+# print(sum(map(solve_part_2_bfs, machines)))
+print(sum(map(solve_part_2_milp, machines)))
+# print(sum(map(solve_part_2_z3, machines)))
+# print(sum(map(solve_part_2_recursive, machines)))
